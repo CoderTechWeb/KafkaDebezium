@@ -97,14 +97,23 @@ curl -X POST http://localhost:8083/connectors   -H "Content-Type: application/js
     }
   }'
 ```
-
 ---
+# 🎯 How Debezium Determines Kafka Topic and How to Use Custom Listeners
 
-## 🔍 Step 3: Verify Connector
+## 🧠 How Debezium Determines the Kafka Topic
 
-```bash
-curl http://localhost:8083/connectors
-curl http://localhost:8083/connectors/order-connector/status
+Debezium reads changes from the database and pushes them to Kafka topics. The topic name is derived using the configuration in your connector:
+
+### Key Configuration Properties:
+
+```json
+"topic.prefix": "outbox",
+"transforms.outbox.route.by.field": "aggregate_type"
+        
+---
+To add custom listeners, you can use the `transforms` configuration in your Debezium connector. The `EventRouter` transform allows you to route events to different topics based on a field value.
+
+"transforms.outbox.route.topic.replacement": "custom-prefix.${aggregate_type}.v1"
 ```
 
 ---
@@ -174,4 +183,5 @@ public class OutboxEventConsumer {
 
 This is the complete markdown guide used for setting up and running a CDC-based outbox pattern using Debezium, Kafka, PostgreSQL, and Spring Boot.
 # KafkaDebezium
+
 
