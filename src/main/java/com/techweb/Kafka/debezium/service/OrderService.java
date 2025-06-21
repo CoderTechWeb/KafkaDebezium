@@ -40,10 +40,8 @@ public class OrderService {
     }
 
     @Transactional
-    public void updateOutboxStatus(Long eventId, OutboxEvent.Status status) {
-        outboxEventRepository.findById(eventId).ifPresent(event -> {
-            event.setStatus(status);
-            outboxEventRepository.save(event);
-        });
+    public void updateOutboxStatus(String aggregateId, OutboxEvent.Status status) {
+        outboxEventRepository.updateStatusByAggregateId(aggregateId, status);
+
     }
 }

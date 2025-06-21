@@ -1,5 +1,8 @@
 package com.techweb.Kafka.debezium.consumer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techweb.Kafka.debezium.entity.OutboxEvent;
 import com.techweb.Kafka.debezium.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,20 +17,36 @@ public class OutboxEventConsumer {
     private OrderService orderService;
 
     @KafkaListener(topics = "outbox.event.Order", groupId = "order-consumer")
-    public void listen(String message, @Header(KafkaHeaders.RECEIVED_KEY) String key) {
+    public void listen(String message, @Header(KafkaHeaders.RECEIVED_KEY) String key) throws JsonProcessingException {
         try {
             // Parse message if needed
             // Simulate processing logic here...
             System.out.println("Consumed: " + message);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(key);
+            JsonNode payloadNode = root.get("payload");
 
-            // Simulate updating status to PUBLISHED (you would extract event ID properly)
-            // Assume message contains eventId as part of payload
-            Long eventId = extractEventId(message);
+            if (payloadNode == null || payloadNode.isNull()) {
+                throw new IllegalArgumentException("Missing payload field in message: " + message);
+            }
+
+            String eventId = payloadNode.asText(); // this gives "903"
+            System.out.println("📦 Aggregate ID: " + eventId);
+
             orderService.updateOutboxStatus(eventId, OutboxEvent.Status.PUBLISHED);
 
         } catch (Exception e) {
-            Long eventId = extractEventId(message);
-            orderService.updateOutboxStatus(eventId, OutboxEvent.Status.FAILED);
+            System.out.println("Consumed: " + message);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(key);
+            JsonNode payloadNode = root.get("payload");
+
+            if (payloadNode == null || payloadNode.isNull()) {
+                throw new IllegalArgumentException("Missing payload field in message: " + message);
+            }
+
+            String eventId = payloadNode.asText(); // this gives "903"
+            System.out.println("📦 Aggregate ID: " + eventId);            orderService.updateOutboxStatus(eventId, OutboxEvent.Status.FAILED);
         }
     }
 
